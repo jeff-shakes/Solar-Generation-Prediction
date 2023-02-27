@@ -1,4 +1,4 @@
-# Solare Energy Generation Prediction
+# Solar Energy Generation Prediction
 
 ## Table of Contents
 * data
@@ -26,7 +26,7 @@
 
 ---
 ## Problem Statement
-$\;\;\;\;\;\;$ Due to the variable nature of renewable energies (i.e.- energies reliant on conditions such as cloudiness for solar or windiness for wind energy), the integration of solar energy generation sites with the larger electrical grids can be extremely complicated. One way of easing this burden is accurately reporting and predicting power generation from these variable generation sites. Therefore, using the solar generation output of a specific solar farm site, along with the weather data, can one predict the solar generation output of that specific site within 0.5 kWh?
+$\;\;\;\;\;\;$ Due to the variable nature of renewable energies (i.e.- energies reliant on conditions such as cloudiness for solar or windiness for wind energy), the integration of solar energy generation sites with the larger electrical grids can be extremely complicated. One way of easing this burden is accurately reporting and predicting power generation from these variable generation sites. Therefore, using the solar generation output of a specific solar farm site, along with the weather data, can one predict the solar generation output of that specific site within 10% of the max output (0.6 kWh)?
 
 ---
 ## Whom This Concerns
@@ -52,10 +52,9 @@ Following python libraried were used during the project:
   
 
 ## Models Investigated
-  - `NAIVE Forecast`
   - `ARIMA`
-  - `Univariate RNN with SimpleRNN`
-  - `Multivariate RNN with LTSM`
+  - `Univariate RNN with SimpleRNN and Dense Layers`
+  - `Multivariate RNN with LTSM, SimpleRNN and Dense Layers`
 
 ---
 ## Datasets
@@ -73,11 +72,9 @@ $\;\;\;\;\;\;$    The weather data in the dataset was derived from the Australia
 
 ---
 ## Data Cleaning
-The data provided was from 01-01-2020 at 6:45AM to 2022-04-23 at 17:15 (PM). This represents a timedelta of 843 days, 10 hours, and 30 min.  
-The data was reindexed with a datetime index and separated by campus, ignoring the site location. This was due to the different longitude and latitude of each campus but shared location per each site within the campuses. The weather data would then match each campus, regardless of site number.
-Next, the weather data was read in, reindexed as a datetime, and had significant missing data. It was then also split by campus number.  
-The Solar Generation and Weather data were then merged for each individual campus and exported.  
-To investigate the final model on a more granular scale, Campus 3 was split among its individual sites and every other site was exported to evaluated.
+$\;\;\;\;\;\;$ The data provided was from 01-01-2020 at 6:45AM to 2022-04-23 at 17:15 (PM). This represents a timedelta of 843 days, 10 hours, and 30 min. The data was reindexed with a datetime index and separated by campus, ignoring the site location. This was due to the different longitude and latitude of each campus but shared location per each site within the campuses. The weather data would then match each campus, regardless of site number.  
+$\;\;\;\;\;\;$ Next, the weather data was read in, reindexed as a datetime, and had significant missing data. It was then also split by campus number. The Solar Generation and Weather data were then merged for each individual campus and exported.  
+$\;\;\;\;\;\;$ To investigate the final model on a more granular scale, Campus 3 was split among its individual sites and every other site was exported to evaluated.
 
 
 ---
@@ -108,10 +105,10 @@ The data was resampled for hourly and the autocorrelation and partial autocorrel
 
 #######plots here
 
-The autocorrelation and partial autocorrelation plots demonstrate the same things as the 15-min interval plots. However, in addition, the hourly partial autocorrelation shows more importance in 2 lags as well as 21, 22, and 23 lags. 
+$\;\;\;\;\;\;$The autocorrelation and partial autocorrelation plots demonstrate the same things as the 15-min interval plots. However, in addition, the hourly partial autocorrelation shows more importance in 2 lags as well as 21, 22, and 23 lags. 
 
 
-Finally, four of eight sites at Campus 3 were examined and exported to determine if the Campus5 model can be applied more granularly at the site level. Specifically, Site 10 seems to have the most similar daily average plot as well as the same scale as Campus 5. Thus, Site 10 is the most likely site to be well modeled by the best model found in investigating Campus 5.
+$\;\;\;\;\;\;$Finally, four of eight sites at Campus 3 were examined and exported to determine if the Campus5 model can be applied more granularly at the site level. Specifically, Site 10 seems to have the most similar daily average plot as well as the same scale as Campus 5. Thus, Site 10 is the most likely site to be well modeled by the best model found in investigating Campus 5.
 
 
 ### Variance of fire data
@@ -127,32 +124,126 @@ Finally, four of eight sites at Campus 3 were examined and exported to determine
 ---
 ## Data Preprocessing
 
-By examining the Solar Generation across the time span given, Campus 5 clearly shows broad seasonality (the actual Seasons - southern hemisphere's winter peaking around July and summer peaking around January) as well as 
+$\;\;\;\;\;\;$By examining the Solar Generation across the time span given, Campus 5 clearly shows broad seasonality (the actual Seasons - southern hemisphere's winter peaking around July and summer peaking around January) as well as 
 
 ----
 ## Modeling
 
+### ARIMA Modeling
+
+$\;\;\;\;\;\;$Initially, gridsearching ARIMA modeling was used on hourly-resampled data to try to get the best *p* and *q* hyperparameters (d was already established to be 0).
+
+$\;\;\;\;\;\;$After running the ranged gridsearch, the best arima model was shown to be a ARIMA(10, 0, 7) model with an Akaike score of 38.0, which was excellent considering most ARIMA models were three orders of magnitude larger.
+
+<kbd>![ResultImage](./images/arima_gridsearch.png)</kbd>
+
+$\;\;\;\;\;\;$However, once plotted, this ARIMA model basically sinusoidally represents the daily seasonability with very low variance accounted for:
+
+
+###@ Image
+###@ Image
+
+This resulted in MAE and RMSE scores of:
+
+| Testing MAE |  Testing RMSE  |
+| :---------: | :------------: |
+|    1.472    |      1.873     |
+
+
+
+### Lagged Modeling
+
+$\;\;\;\;\;\;$Next, the lagged models of both the 15-min frequency data and the hourly sampled data were investigated. The number of lags were based on the partial autocorrelation determined in the EDA.
+
+The 15-Min Freq Data:
+
+###@ Image
+###@ Image
+
+$\;\;\;\;\;\;$Most of the preds look like just the true values shifted over by 15 min or so. However, looking closely, especially when looking at the second hundred intervals graphed (specifically around 9am on 11-10) the predictions and true values diverge briefly. Which means the predictions aren't just relying on the the first lagged value, even though that clearly is the most-utilitzed variable. This was proven by linear regression's coefficients.
+
+
+Lagged Linear Regression Scores
+
+| Training R-Squared |  Testing R-Squared  |
+| :----------------: | :-----------------: |
+|       0.875        |        0.899        |
+
+$\;\;\;\;\;\;$This shows the most informative lags still only account for 89.9% of the variability in the data. Therefore, things like the weather still play an important role in the variability.
+
+
+Lagged Prediction Scores:
+
+| Testing MAE |  Testing RMSE  |
+| :---------: | :------------: |
+|    0.260    |      0.629     |
+
+$\;\;\;\;\;\;$These results demonstrates that a model that is updated every 15-min can predict the next 15-min interval with the above scores. However, modeling in that way would be very difficult to maintain. Thus, the RNN modeling's goal is to beat these scores.
+
+
+### Recurrent Neural Network Modeling
+
+$\;\;\;\;\;\;$Using Google Colab, both Univariate and Multivariate modeling was investigated on the 15-min interval data, the resampled hourly data, and the resampled daily max data.
+
+<u> Univariate Modeling:  </u>  
+$\;\;\;\;\;\;$Exploring different combination of SimpleRNN and Dense layers, along with experiementing on different sequence lengths the two best models were found (best for MAE and best for RMSE).  
+
+$\;\;\;\;\;\;$Next, the best two models then had their Adam Optimizer's learning rate tuned to get the best scores:
+
+Best MAE Model:
+- 96 interval sequences (1 full day)
+- SimpleRNN layer with 64 nodes
+- Dense output layer (linear activation for Regression)
+- Adam Learning Rate of 0.002
+
+| Testing MAE |  Testing RMSE  |
+| :---------: | :------------: |
+|    0.1834   |     0.5831     |
+
+
+Best RMSE Model:
+- 16 interval sequences (4 hours)
+- Two SimpleRNN layers with 32 nodes each
+- Dense output layer (linear activation for Regression)
+- Adam Learning Rate of 0.0015
+
+| Testing MAE |  Testing RMSE  |
+| :---------: | :------------: |
+|   0.1915    |     0.57525    |
+
+
+<u> Multivariate Modeling:  </u>  
+
+The weather data was incomplete in comparison to the solar generation data, and was not included for the first year (approximately). So the dataframe was curtailed to where the weather data starts (index 33311). The weather was then interpolated using feed-forward methods, allowing for no missing data.
+
+Next, the features were selected and scaled. Finally, the timeseries sequences were examined for 4 intervals (1 hour), 16 intervals (4 hours), and 96 intervals (1 day) and subsequently run through a variety of models including LSTM, SimpleRNN and Dense layers.
+
+The best model (4-hour sequences with LSTM and 96 nodes) gave results of:
+
+| Testing MAE |  Testing RMSE  |
+| :---------: | :------------: |
+|   0.4346    |     0.8450     |
+
+These scores are not nearly as optimal as those found through the univartiate modeling. Thus, the top two univariate models will be the ones used when investigating its application to larger campuses with many sites, and to more granular, single sites within larger campuses.
+
+
+<u> Applying Best Models to Other Campuses and Sites:  </u>
+
+Each of the other campuses (Campus 1-4) and four sites from Campus 3 (Sites 6, 8, 10, and 12) were used to train and test the two best models (and their respective sequence lengths) and the results are below:
+
+
+![Scores](images/scores.png)
+
+When compared to the results from Campus 5
 
 
 
 
 
 
-
-
-Initially we investigated modeling for the data on all fires, as well as fires filtered to over an acre and lasting longer than 24 hours. The best of those initial models had RMSE values around 6000 acres.  
-
-Next we utilitzed dozens of different machine learning models with extensive parameter tuning on four different train/test sets derived from the filtered fires but with outliers removed. Those train/test sets inlcuded:
-- dataset without the categorical feature (landcover_class)
-- dataset with the categorical feature dummied
-- dataset with the categorical feature dummied but transformed by PCA (to eliminate dimensionality)
-- dataset without the categorical feature but transformed by Polynomial Features and then transformed by PCA (to investigate any compounding features but also reduce dimensionality)
-
-The two best models were a stacked ensemble model with a RandomForest Regression, Adaboost Regression, and Lasso Regression as the base estimators and a Linear Regression as the final estimator--all carried out on the dataset without the categorical feature. That model resulted in scores of:  
-
-| RMSE  | Training R-Squared | Testing R-Squared |
-| :---: | :----------------: | :---------------: |
-| 62.05 |       0.126        |       0.205       |
+######
+###
+####
 
 Interestingly, the next closest model was a simple linear regression carried out on the same train/test set.  
 
