@@ -100,11 +100,11 @@ EDA was separated out by campus. But for each:
 
 Out of these different campuses, Campus 4 and 5's non-zero generation data was most normal and each only have one site at each campus. Randomly, Campus 5 was chosen to move forward with the modeling process.
 
-<kbd>![Image](../images/Campus5_timeavg.png)</kbd>  
+<kbd>![Image](./images/Campus5_timeavg.png)</kbd>  
 
 #####
 
-<kbd>![Image](../images/boxplots_campus5.png)</kbd>
+<kbd>![Image](./images/boxplots_campus5.png)</kbd>
 
 #####
 
@@ -112,7 +112,7 @@ Next, the autocorrelation and partial autocorrelation plots were investigated fo
 
 #####
 
-<kbd>![Image](../images/Campus5_autocorr.png)</kbd>
+<kbd>![Image](./images/Campus5_autocorr.png)</kbd>
 
 #####
 The autocorrelation is very much like what was expected:
@@ -121,7 +121,7 @@ The autocorrelation is very much like what was expected:
 >> This is most likely due to differences in the weather
 ##### 
 
-<kbd>![Image](../images/Campus5_partialautocorr.png)</kbd>  
+<kbd>![Image](./images/Campus5_partialautocorr.png)</kbd>  
 
 #####
 
@@ -133,11 +133,11 @@ The data was resampled for hourly and the autocorrelation and partial autocorrel
 
 #####
 
-<kbd>![Image](../images/Campus5_Hourly_autocorr.png)</kbd>
+<kbd>![Image](./images/Campus5_Hourly_autocorr.png)</kbd>
 
 #####
 
-<kbd>![Image](../images/Campus5_Hourly_partialautocorr.png)</kbd>
+<kbd>![Image](./images/Campus5_Hourly_partialautocorr.png)</kbd>
 
 #####
 
