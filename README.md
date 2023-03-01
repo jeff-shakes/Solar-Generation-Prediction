@@ -4,6 +4,8 @@
 * data
   * cleaned
   * raw
+  * predictions
+  * models
 * images
 
 * presentation
@@ -18,11 +20,12 @@
 
   * 03 - Modeling
     * 04 - Modeling
-    * 05 - Univariate_Modeling
-    * 06 - Multivariate_Modeling
-    * 07 - Modeling_Other_Campuses_Sites
+    * 05 - Univariate Modeling
+    * 06 - Multivariate Modeling
+    * 07 - Modeling Other Campuses_Sites
+    * 08 - Post Modeling Analysis
     
-  * 04 - Modeling
+  * 04 - Streamlit
     * solar_generation_streamlit.py
 #####
 
@@ -77,12 +80,13 @@ For this project, a dataset was used that incorporated:
 ## Data Collection
    The dataset contains high-granularity solar energy generation data from 42 solar sites across five La Trobe University, Victoria, Australia campuses. The dataset includes nearly two years of solar energy generation data collected at 15-min intervals. 
   
-   The weather data in the dataset was derived from the Australian Bureau of Meteorology (BOM) using the geographical placement of each campus. The weather data includes Apparent Temperature, Air Temperature, Dew Point Temperature, Relative Humidity, Wind Speed and Wind Direction.  
+   The weather data in the dataset was derived from the Australian Bureau of Meteorology (BOM) using the geographical placement of each campus. The weather data includes Apparent Temperature, Air Temperature, Dew Point Temperature, Relative Humidity, Wind Speed and Wind Direction.
+   > There is strong correlation between these weather features and cloud cover. Therefore, this historical weather data will have sufficiently represent the cloud cover feature that would absolutely affect solar generation output.
 
 #####
 ---
 ## Data Cleaning
- The data provided was from 01-01-2020 at 6:45AM to 2022-04-23 at 17:15 (PM). This represents a timedelta of 843 days, 10 hours, and 30 min. The data was reindexed with a datetime index and separated by campus, ignoring the site location. This choice was made because longitude and latitude was recorded for each campus and the reported location of each site was reported as the larger campus location. The weather data would then match each campus, regardless of site number.  
+ The data provided was from 01-01-2020 at 6:45AM to 2022-04-23 at 17:15PM. This represents a timedelta of 843 days, 10 hours, and 30 min. The data was reindexed with a datetime index and separated by campus, ignoring the site location. This choice was made because longitude and latitude was recorded for each campus and the reported location of each site was reported as the larger campus location. The weather data would then match each campus, regardless of site number.  
  Next, the weather data was read in, reindexed as a datetime, and had significant missing data. It was then also split by campus number. The Solar Generation and Weather data were merged for each campus and exported.  
  To investigate the final model on a more granular scale, Campus 3 was split among its individual sites, and half the sites were exported to evaluated.
 
@@ -96,45 +100,92 @@ EDA was separated out by campus. But for each:
 
 Out of these different campuses, Campus 4 and 5's non-zero generation data was most normal and each only have one site at each campus. Randomly, Campus 5 was chosen to move forward with the modeling process.
 
-############ distribution and avg daily for campus 5 here
-summer and winter investigations too (subplots)
+<kbd>![Image](../images/Campus5_timeavg.png)</kbd>  
+
+#####
+
+<kbd>![Image](../images/boxplots_campus5.png)</kbd>
+
+#####
 
 Next, the autocorrelation and partial autocorrelation plots were investigated for the 15-min frequency intervals.
 
-#######plots here
+#####
 
+<kbd>![Image](../images/Campus5_autocorr.png)</kbd>
+
+#####
 The autocorrelation is very much like what was expected:
 > Reflects the seasonality of night/day cycle - 48 lags (12 hours) cause the most negative score.
 > 96 lags (equal to 1 day) is very highly correlated, but not quite 1
 >> This is most likely due to differences in the weather
+##### 
+
+<kbd>![Image](../images/Campus5_partialautocorr.png)</kbd>  
+
+#####
 
 The partial autocorrelation shows the most important is the 15-min interval before the one in question. This absolutely makes sense due to the interval frequency in relation to solar-path interval.
 
+#####
 
 The data was resampled for hourly and the autocorrelation and partial autocorrelation plots were investigated:
 
-#######plots here
+#####
+
+<kbd>![Image](../images/Campus5_Hourly_autocorr.png)</kbd>
+
+#####
+
+<kbd>![Image](../images/Campus5_Hourly_partialautocorr.png)</kbd>
+
+#####
 
 The autocorrelation and partial autocorrelation plots demonstrate the same things as the 15-min interval plots. However, the hourly partial autocorrelation also shows more importance in 2 lags as well as 21, 22, and 23 lags. 
 
 
 Finally, four of eight sites at Campus 3 were examined and exported to determine if the Campus5 model can be applied more granularly at the site level. Specifically, Site 10 seems to have the most similar daily average plot as well as the same scale as Campus 5. Thus, Site 10 is the most likely site to be well modeled by the Campus 5 best model.
 
+#####
 
-### Variance of fire data
-![Scatter Plot](public/visuals/wildfire_all_size_vs_duration.png)
-  
-### Seasonality of precipitation and fires:
-![Scatter Plot](public/visuals/fire_rain_snow.png)
+<kbd>![Image](./images/Campus3_Site10.png)</kbd>
 
-### Most burned vegetation types:
-![Scatter Plot](public/visuals/landcover_most_burned.png)
-
+#####
 
 ---
-## Data Preprocessing
+## Data Preprocessing and Targeted EDA
 
-By examining the Solar Generation across the time span given, Campus 5 clearly shows broad seasonality (the actual Seasons - southern hemisphere's winter peaking around July and summer peaking around January) as well as 
+By examining the Solar Generation across the time span given, Campus 5 clearly shows broad seasonality (i.e., the astronomical seasons - southern hemisphere's winter peaking around July and summer peaking around January) as well as daily seasonality (i.e., the daily solar cycle - day/night): the latter seasonality shown by the autocorrelation plots above.
+
+However, the variability in the data is quite extreme from day-to-day. For instance, the plots of the first day and the eleventh day is provided below:
+
+#####
+
+<kbd>![Image](./images/Campus5_firstday.png)</kbd>
+
+#####
+
+<kbd>![Image](./images/Campus5_eleventhday.png)</kbd>
+
+#####
+
+The dramatic change in output on Day 1 more than like is a result of electrical architecture failings, and not weather. A cloudy day can reduce solar generation by up to 90%, but the extreme change in such a little time period more than likely means a failure in the inverter / connectivity issue. This presents variability the model will inherently struggle with.
+
+Using the last value in the train sequence, the baseline predictions were simply that value applied to the entire testing daterange.
+
+#####
+
+<kbd>![Image](./images/baseline_preds.png)</kbd>
+
+#####
+
+| Testing MAE |  Testing RMSE  |
+| :---------: | :------------: |
+|    1.141    |      2.447     |
+
+#####
+
+After hourly resampling the data, the Augmented Dickey Fuller test was employed to check the stationarity of the data. With a p-value goal of less than 0.01, the non-differenced data passed with an extremely low p-value. Therefore, the *d* parameter of an ARIMA model will be zero.
 
 ----
 ## Modeling
@@ -145,21 +196,31 @@ Initially, gridsearching ARIMA modeling was used on hourly-resampled data to try
 
 After running the ranged gridsearch, the best arima model was shown to be a ARIMA(10, 0, 7) model with an Akaike score of 38.0, which was excellent considering most ARIMA models were three orders of magnitude larger.
 
+#####
+
 <kbd>![ResultImage](./images/arima_gridsearch.png)</kbd>
+
+#####
 
 However, once plotted, this ARIMA model basically sinusoidally represents the daily seasonability with very low variance accounted for:
 
+#####
 
-###@ Image
-###@ Image
+<kbd>![ResultImage](./images/arma.png)</kbd>
+
+#####  
+
+<kbd>![ResultImage](./images/48hrs_arma.png)</kbd>
+
+#####
 
 This resulted in MAE and RMSE scores of:
 
 | Testing MAE |  Testing RMSE  |
 | :---------: | :------------: |
-|    1.472    |      1.873     |
+|    1.524    |      1.934     |
 
-
+#####
 
 ### Lagged Modeling
 
@@ -167,8 +228,11 @@ Next, the lagged models of both the 15-min frequency data and the hourly sampled
 
 The 15-Min Freq Data:
 
-###@ Image
-###@ Image
+#####
+
+<kbd>![ResultImage](./images/lagged_day2.png)</kbd>
+
+#####
 
 Most of the preds look like the true values shifted over by 15 minutes. However, looking closely, especially at the second hundred intervals graphed (specifically around 9am on 11-10), the predictions and true values diverge briefly. This means the predictions aren't just relying on the first lagged value, even though that is the most utilitzed variable. The linear regression's coefficients proved this.
 
@@ -201,16 +265,14 @@ Exploring different combination of SimpleRNN and Dense layers, along with experi
  Next, the best two models then had their Adam Optimizer's learning rate tuned to get the final, best model:
 
 Best Model:
-- 96 interval sequences (1 full day)
-- SimpleRNN layer with 64 nodes
+- 16 interval sequences (4 Hours)
+- Two SimpleRNN layer with 32 nodes each
 - Dense output layer (linear activation for Regression)
-- Adam Learning Rate of 0.002
+- Adam Learning Rate of 0.0008
 
 | Testing MAE |  Testing RMSE  |
 | :---------: | :------------: |
-|    0.1834   |     0.5831     |
-
-
+|    0.1871   |     0.5765     |
 
 
 <u> Multivariate Modeling:  </u>  
@@ -225,61 +287,89 @@ The best model (4-hour sequences with LSTM and 96 nodes) gave results of:
 | :---------: | :------------: |
 |   0.4346    |     0.8450     |
 
-These scores are not nearly as optimal as those found through univartiate modeling. Thus, the top two univariate models will be used when investigating its application to entire campuses with many sites and to more granular, single sites within the larger campuses.
+These scores are not nearly as optimal as those found through univartiate modeling. Thus, the top univariate model will be used when investigating its application to entire campuses with many sites and to more granular, single sites within the larger campuses.
 
 
 <u> Applying Best Models to Other Campuses and Sites:  </u>
 
-Each of the other campuses (Campus 1-4) and four sites from Campus 3 (Sites 6, 8, 10, and 12) were used to train and test the two best models (and their respective sequence lengths) and the results are below:
+Each of the other campuses (Campus 1-4) and four sites from Campus 3 (Sites 6, 8, 10, and 12) were Min/Max Scaled and then used to train and test the best model (and its respective sequence length) and the results are below:
+
+#####
+
+<kbd>![ResultImage](./images/scores.png)</kbd>
+
+#####
+
+When compared to the results from Campus 5, the Min/Max Scaled data returns very similar MAE and RMSE scores for each campus/site. These results allow the best model found for Campus 5 to potentially be used across different sites and campuses to predict the solar generation output.
 
 
-![Scores](images/scores.png)
-
-When compared to the results from Campus 5
-
-
-
-
-
-
-######
-###
-####
-
-   
      
-### Distribution of True and Predicted Values:
-![Histogram](public/visuals/True_vs_Preds.png)
-     
-     
-     
-I$$$$nvestigating the coefficients from the linear regression (2nd best model) showed the biggest factors it used was wind speed and surface soil wetness (5cm below). These findings makes sense within the context of our investigation. However, it was interesting present rain or past precipiation didn't affect the model as much as the other features.
+### Post Modeling Analysis:
+#####
 
+#### Campus 5:
+
+#####
+<kbd>![ResultImage](./images/campus5_truevspreds.png)</kbd>
+
+#####
+
+The distribution of Campus 5's best model predictions versus the true test values reveals the predictions to regularly be slightly higher than the true values. This is further shown by the first and last day of the testing data and the corresponding predictions:
+
+#####
+
+<kbd>![ResultImage](./images/campus5_preds_firstday.png)</kbd>
+<kbd>![ResultImage](./images/campus5_preds_lastday.png)</kbd>
+
+#####
+
+
+Campus 1 also shows this trend:
+
+#####
+
+<kbd>![ResultImage](./images/camp1_truevspreds.png)</kbd>
+
+#####
+
+This trend is shown in Site 10 at lower values, but it seems the predictions have a lower maximum than the true values:
+
+#####
+
+<kbd>![ResultImage](./images/site10_truevspreds.png)</kbd>
+
+#####
+
+
+Interestingly enough, by simply subtracting the value each model predicts over night (where the actual values are 0), the resulting "Preds Minus" does even better in MAE and RMSE scores:
+
+| Campus/Site |  Preds MAE  |  Preds Minus MAE  |   Preds RMSE   |   Preds Minus RMSE   |
+| :---------: | :---------: | :---------------: | :------------: | :------------------: |
+|   Campus 5  |   0.0571    |      0.0406       |     0.0757     |        0.0642        |
+|   Campus 1  |   0.0458    |      0.0383       |     0.0651     |        0.0601        |
+|   Site 10   |   0.0468    |      0.0399       |     0.0692     |        0.0653        |
+
+This simple subtraction method seems to be working well and is absolutely worth investigating for each Site/Campus to get even better predictions.
 
 ----
 ## Conclusion & Recommendation
 
-Based on the wide variety of analysis and modeling conducted, the best model could predict the solar generation output with a MAE score of less than 10% of the maximum solar generation output (0.6 kWh in the case of Campus 5).   
+Based on the wide variety of analyses and modeling conducted, the best model could predict the solar generation output with an MAE score of less than 10% of the maximum solar generation output (0.6 kWh in the case of Campus 5).   
 
-Moreover, the best model's architecture does reasonably well when applied to the other Campuses and the specific Sites examined (Sites 6, 8, 10, and 12 within Campus 3).   
+Moreover, the best model's architecture does reasonably well when applied to the other Campuses and the specific Sites examined (the MAE and RMSE scores of the Min/Max Scaled data were less than the target of approximately 0.1 - or 10% of max output).   
 
-However, the variability in the output relies on many things, such as the component's functionality and weather patterns. Consequently, future research on the weather data's effect on energy generation on these sites is recommended.
+However, the variability in the output relies on many things, such as the component's functionality and weather patterns. Consequently, collecting and examining cloud cover data is recommended for future research on the that feature's effect on energy generation at these sites.
 
 ----
 
 ## Future Research
 
-
-
-
-$$$$For future investigations, the model could potentially be better at predicting the size of the resulting fire by incorporating:
+For future investigations, the model could potentially be better at predicting the exact output at each Campus or at each site by incorporating:
      
-- Accurate Slope Data
-- Geography - Human Elements such as roads which would allow quicker human intervention
-- Geography - Natural Elements such as lakes, rivers, and steep mountains; giving a native boundary for the fire
-- Narrowing the parameters for the investigation (i.e. - An area with only a certain vegetation coverage)
-
-Also, it would be worth investigating modeling/predicting daily fire growth rather than total acres burned. This would allow the incorporation of weather data through the fire (i.e.- the second day might be extremely windy, allowing the fire to spread rapidly. This case would not have been accurately represented by our models in this study).
+- Accurate Sunrise and Sunset feature
+- Weather data specifically concerning cloud cover
+- Using different models on each Campus and Site to determine if different models to better at different sites or at different levels (Entire Campus vs Individual Site)
+- Maintenance schedules or reports of electrical architecture malfunction
 
 
 ----
@@ -288,15 +378,15 @@ Also, it would be worth investigating modeling/predicting daily fire growth rath
 
 ## Data Dictionary
 
-| Features                | Data Types | Description                                                                                                                                                                                                                                                                                                         |
-| :---------------------- | :--------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Campus Key                     | Int    | Campus ID Key                                                                                                                                                                                                                   |
-| Site Key                 | INT    | Site ID Key                                                                                                                                                                                                 |
-| Timestamp                    | datetime    | datetime of the observation                                                                                                                                                                                                                  |
-| SolarGeneration             | float64    | The kWh generated                                                                                                                                                                                     |
-| ApparentTemperature                    | float64    | Apparent Temp (degrees C)                                                                                                                                                                                                                                  |
-| AirTemperature                | float64    | Air Temp (degrees C)                                                                                                                                                                                                                                        |
-| DewPointTemperature                    | float64    | Dew Point Temp (degrees C)                                                                                                                                                                                                                                  |
-| RelativeHumidity                | float64    | Humidity Percentage                                                                                                                                                                                                                                        |
-| WindSpeed                    | float64    | Windspeed (m/s)                                                                                                                                                                                                                                  |
-| WindDirection                | float64    | Wind Direction (degrees from North)                                                                                                                                                                                                                                        |
+| Features                | Data Types | Description         |
+| :---------------------- | :--------- | :--------------- |
+| Campus Key              | Int    | Campus ID Key     |
+| Site Key          | Int    | Site ID Key     |
+| Timestamp            | datetime    | datetime of the observation     |
+| SolarGeneration       | float64    | The kWh generated     |
+| ApparentTemperature              | float64    | Apparent Temp (degrees C)              |
+| AirTemperature          | float64    | Air Temp (degrees C)        |
+| DewPointTemperature            | float64    | Dew Point Temp (degrees C)           |
+| RelativeHumidity          | float64    | Humidity Percentage         |
+| WindSpeed             | float64    | Windspeed (m/s)                    |
+| WindDirection        | float64    | Wind Direction (degrees from North)           |

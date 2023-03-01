@@ -4,126 +4,192 @@ import numpy as np
 import h5py
 import datetime as dt
 import matplotlib.pyplot as plt
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras.utils import timeseries_dataset_from_array
-from matplotlib.backends.backend_agg import RendererAgg
-_lock = RendererAgg.lock
+
 
 # Load data
-#@st.cache
-#def load_data():
-#    camp1 = pd.read_csv("../../data/cleaned/campus5.csv")
-#    camp1["Date"] = pd.to_datetime(camp1["Date"])
-#    return camp1.set_index("Date")
+@st.cache
+def load_camp1():
+    camp1 = pd.read_csv("../../data/predictions/camp1_pred.csv")
+    camp1.index = pd.to_datetime(camp1["Timestamp"])
+    return camp1
 
-#camp1 = load_data()
+def load_camp2():
+    camp2 = pd.read_csv("../../data/predictions/camp2_pred.csv")
+    camp2.index = pd.to_datetime(camp2["Timestamp"])
+    return camp2
 
-model_campus5 = keras.models.load_model('df.h5')
+def load_camp3():
+    camp3 = pd.read_csv("../../data/predictions/camp3_pred.csv")
+    camp3.index = pd.to_datetime(camp3["Timestamp"])
+    return camp3
 
-def forecast(model, batch_size = 16, row):
-    X = row[0:-1]
-    X = X.reshape(1, 1, len(X))
-    yhat = model.predict(X, batch_size=batch_size)
-    return yhat[0,0]
+def load_camp4():
+    camp4 = pd.read_csv("../../data/predictions/camp4_pred.csv")
+    camp4.index = pd.to_datetime(camp4["Timestamp"])
+    return camp4
 
-# Define a function to make predictions
-def predictions(start, end, choice):
+def load_camp5():
+    camp5 = pd.read_csv("../../data/predictions/camp5_pred.csv")
+    camp5.index = pd.to_datetime(camp5["Timestamp"])
+    return camp5
 
-    indx = pd.date_range(start = start, end = end, freq = '15T')
-    if choice == 'Campus 1':
-        model = model_campus5
-        max_val = 488.088
-    elif choice == 'Campus 2':
-        model = model_campus5
-    elif choice == 'Campus 3':
-        model = model_campus5
-    elif choice == 'Campus 4':
-        model = model_campus5
-    elif choice == 'Campus 5':
-        model = model_campus5
-    elif choice == 'Campus 3 - Site 6':
-        model = model_campus5
-    elif choice == 'Campus 3 - Site 8':
-        model = model_campus5
-    elif choice == 'Campus 3 - Site 10':
-        model = model_campus5
-    elif choice == 'Campus 3 - Site 12':
-        model = model_campus5
+def load_site6():
+    site6 = pd.read_csv("../../data/predictions/site6_pred.csv")
+    site6.index = pd.to_datetime(site6["Timestamp"])
+    return site6
 
-#    indx = tf.keras.layers.Reshape(indx)
-    seq_length = 16
-    indx_seq = timeseries_dataset_from_array(
-        indx,
-        targets = indx[seq_length:],
-        sequence_length = seq_length,
-        batch_size = 96,
-        shuffle = False,
-        seed = 42
-    )
-    predicts = model.predict(indx_seq)
-    preds = predicts*max_val
-    preds_df = pd.DataFrame(data = preds, index = indx, columns = ['Preds'])
+def load_site8():
+    site8 = pd.read_csv("../../data/predictions/site8_pred.csv")
+    site8.index = pd.to_datetime(site8["Timestamp"])
+    return site8
 
-    return preds_df
+def load_site10():
+    site10 = pd.read_csv("../../data/predictions/site10_pred.csv")
+    site10.index = pd.to_datetime(site10["Timestamp"])
+    return site10
 
-#Streamlit app
+def load_site12():
+    site12 = pd.read_csv("../../data/predictions/site12_pred.csv")
+    site12.index = pd.to_datetime(site12["Timestamp"])
+    return site12
+
+camp1 = load_camp1()
+camp2 = load_camp2()
+camp3 = load_camp3()
+camp4 = load_camp4()
+camp5 = load_camp5()
+site6 = load_site6()
+site8 = load_site8()
+site10 = load_site10()
+site12 = load_site12()
+
+
+x = pd.date_range(start = camp1.index[0], end = camp1.index[-1], freq = '15T')
+
+def plot_option_1():
+    fig, ax = plt.subplots(figsize = (12,8))
+    ax.plot(camp1[['Preds', 'True']])
+    ax.set_xlabel('Time', fontsize = 20)
+    for tick in ax.get_xticklabels():
+        tick.set_rotation(30)
+    ax.set_ylabel('Solar Generation (Min/Max Scaled)', fontsize = 20)
+    ax.set_title('Campus 1', fontsize = 28);
+
+def plot_option_2():
+    fig, ax = plt.subplots(figsize = (12,8))
+    ax.plot(camp2[['Preds', 'True']])
+    ax.set_xlabel('Time', fontsize = 20)
+    for tick in ax.get_xticklabels():
+        tick.set_rotation(30)
+    ax.set_ylabel('Solar Generation (Min/Max Scaled)', fontsize = 20)
+    ax.set_title('Campus 2', fontsize = 28);
+
+def plot_option_3():
+    fig, ax = plt.subplots(figsize = (12,8))
+    ax.plot(camp3[['Preds', 'True']])
+    ax.set_xlabel('Time', fontsize = 20)
+    for tick in ax.get_xticklabels():
+        tick.set_rotation(30)
+    ax.set_ylabel('Solar Generation (Min/Max Scaled)', fontsize = 20)
+    ax.set_title('Campus 3', fontsize = 28);
+
+def plot_option_4():
+    fig, ax = plt.subplots(figsize = (12,8))
+    ax.plot(camp4[['Preds', 'True']])
+    ax.set_xlabel('Time', fontsize = 20)
+    for tick in ax.get_xticklabels():
+        tick.set_rotation(30)
+    ax.set_ylabel('Solar Generation (Min/Max Scaled)', fontsize = 20)
+    ax.set_title('Campus 4', fontsize = 28);
+
+def plot_option_5():
+    fig, ax = plt.subplots(figsize = (12,8))
+    ax.plot(camp5[['Preds', 'True']])
+    ax.set_xlabel('Time', fontsize = 20)
+    for tick in ax.get_xticklabels():
+        tick.set_rotation(30)
+    ax.set_ylabel('Solar Generation (Min/Max Scaled)', fontsize = 20)
+    ax.set_title('Campus 5', fontsize = 28);
+
+def plot_option_6():
+    fig, ax = plt.subplots(figsize = (12,8))
+    ax.plot(site6[['Preds', 'True']])
+    ax.set_xlabel('Time', fontsize = 20)
+    for tick in ax.get_xticklabels():
+        tick.set_rotation(30)
+    ax.set_ylabel('Solar Generation (Min/Max Scaled)', fontsize = 20)
+    ax.set_title('Site 6', fontsize = 28);
+
+def plot_option_8():
+    fig, ax = plt.subplots(figsize = (12,8))
+    ax.plot(site8[['Preds', 'True']])
+    ax.set_xlabel('Time', fontsize = 20)
+    for tick in ax.get_xticklabels():
+        tick.set_rotation(30)
+    ax.set_ylabel('Solar Generation (Min/Max Scaled)', fontsize = 20)
+    ax.set_title('Site 8', fontsize = 28);
+
+def plot_option_10():
+    fig, ax = plt.subplots(figsize = (12,8))
+    ax.plot(site10[['Preds', 'True']])
+    ax.set_xlabel('Time', fontsize = 20)
+    for tick in ax.get_xticklabels():
+        tick.set_rotation(30)
+    ax.set_ylabel('Solar Generation (Min/Max Scaled)', fontsize = 20)
+    ax.set_title('Site 10', fontsize = 28);
+
+def plot_option_12():
+    fig, ax = plt.subplots(figsize = (12,8))
+    ax.plot(site12[['Preds', 'True']])
+    ax.set_xlabel('Time', fontsize = 20)
+    for tick in ax.get_xticklabels():
+        tick.set_rotation(30)
+    ax.set_ylabel('Solar Generation (Min/Max Scaled)', fontsize = 20)
+    ax.set_title('Site 12', fontsize = 28);
+
+
+
+
 def app():
-    st.sidebar.title("Solar Energy Generation Prediction App")
-
-    with st.sidebar.container():
-        options = ['Campus 1', 'Campus 2', 'Campus 3', 'Campus 4', 'Campus 5', 'Campus 3 - Site 6',
-        'Campus 3 - Site 8',  'Campus 3 - Site 10', 'Campus 3 - Site 12']
-        choice = st.selectbox("Select Only One Option", options)
-
-
-    #    date_range = st.slider("Select date range", min_value=data.index.min(), max_value=camp1.index.max(), value=(data.index.min(), data.index.max()))
-
-    #    data_filtered = data.loc[date_range[0]:date_range[1]]
-
-
+    # Define the options
+    options = {
+        "Campus 1": plot_option_1,
+        "Campus 2": plot_option_2,
+        "Campus 3": plot_option_3,
+        "Campus 4": plot_option_4,
+        "Campus 5": plot_option_5,
+        "Site 6": plot_option_6,
+        "Site 8": plot_option_8,
+        "Site 10": plot_option_10,
+        "Site 10": plot_option_10,
 
 
+    }
+    option = st.sidebar.selectbox("Select an option", list(options.keys()))
 
-        start_date = st.date_input("Start Date")
-        start_time = st.time_input("Start Time")
-        end_date = st.date_input("End Date")
-        end_time = st.time_input("End Time")
+    plot_func = options[option]
 
-        start = dt.datetime.combine(start_date, start_time)
-        end = dt.datetime.combine(end_date, end_time)
+    # Call the plot function
+    plot_func()
 
-    # Create a time series plot
-    #with _lock:
-    #    fig, ax = plt.subplots(figsize=(8, 6))
-    #    ax.plot(data_filtered.index, data_filtered["Value"])
-    #    ax.set_xlabel("Date")
-    #    ax.set_ylabel("Value")
-    #    ax.set_title("Time Series Plot")
-    #    st.pyplot(fig)
+    # Define the zoom slider
+    zoom_level = st.sidebar.slider("Zoom level", 0.1, 70.0, 1.0)
 
-    # Preds
-    preds_df = predictions(start, end, choice)
+    # Set the x-axis limits based on the zoom level
+    x_limits = plt.xlim()
+    x_range = x_limits[1] - x_limits[0]
+    x_middle = (x_limits[0] + x_limits[1]) / 2
+    plt.xlim(x_middle - x_range / (2 * zoom_level), x_middle + x_range / (2 * zoom_level))
 
-    # Write Predictions
-    st.write(f"The predicted solar generation for the given timeframe is given below")
-    st.write(preds_df)
+    # Define the x-axis slider
+    x_slider = st.sidebar.slider("X-axis", float(x_limits[0]), float(x_limits[1]), float(x_middle), step=float(x_range/100))
 
+    # Set the x-axis based on the slider value
+    plt.xlim(x_slider - x_range / (2 * zoom_level), x_slider + x_range / (2 * zoom_level))
 
-    # Plot the preds
-    fig, ax = plt.subplots()
-    ax.bar(preds_df.index, preds_df['Preds'])
-    ax.set_xticklabels([])
-    ax.set_ylabel('Solar Generation (kWh)')
-    ax.set_xlabel('Time')
-    ax.set_title('Solar Generation Output (kWh)')
+    fig = plt.gcf()
     st.pyplot(fig)
 
-#    csv = preds_df.to_csv(index=False)
-#    b64 = base64.b64encode(csv.encode()).decode()
-#    href = f'<a href="data:file/csv;base64,{b64}" download="{choice}predictions.csv">Download CSV</a>'
-#    st.markdown(href, unsafe_allow_html=True)
 
-# Run the app
 if __name__ == '__main__':
     app()
