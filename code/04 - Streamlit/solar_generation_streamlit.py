@@ -169,7 +169,7 @@ def app():
 
     plot_func()
 
-    zoom_level = st.sidebar.slider("Zoom level", 0.1, 70.0, 1.0)
+    zoom_level = st.sidebar.slider("Zoom level", 0.1, 100.0, 1.0)
 
     x_limits = plt.xlim()
     x_range = x_limits[1] - x_limits[0]
