@@ -6,7 +6,6 @@ import datetime as dt
 import matplotlib.pyplot as plt
 
 
-# Load data
 @st.cache
 def load_camp1():
     camp1 = pd.read_csv("../../data/predictions/camp1_pred.csv")
@@ -151,7 +150,6 @@ def plot_option_12():
 
 
 def app():
-    # Define the options
     options = {
         "Campus 1": plot_option_1,
         "Campus 2": plot_option_2,
@@ -169,22 +167,17 @@ def app():
 
     plot_func = options[option]
 
-    # Call the plot function
     plot_func()
 
-    # Define the zoom slider
     zoom_level = st.sidebar.slider("Zoom level", 0.1, 70.0, 1.0)
 
-    # Set the x-axis limits based on the zoom level
     x_limits = plt.xlim()
     x_range = x_limits[1] - x_limits[0]
     x_middle = (x_limits[0] + x_limits[1]) / 2
     plt.xlim(x_middle - x_range / (2 * zoom_level), x_middle + x_range / (2 * zoom_level))
 
-    # Define the x-axis slider
     x_slider = st.sidebar.slider("X-axis", float(x_limits[0]), float(x_limits[1]), float(x_middle), step=float(x_range/100))
 
-    # Set the x-axis based on the slider value
     plt.xlim(x_slider - x_range / (2 * zoom_level), x_slider + x_range / (2 * zoom_level))
 
     fig = plt.gcf()
